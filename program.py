@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from typing import Optional
-from PyQt6.QtCore import QPoint, QPropertyAnimation
+from PyQt6.QtCore import QPoint, QPropertyAnimation, Qt
 from PyQt6.QtGui import QPixmap
 from PyQt6.QtWidgets import QApplication, QLabel, QMainWindow
 
@@ -10,7 +10,10 @@ def load_image(path):
     return label
 
 class Fnoof(QMainWindow):
-    pass
+
+    def __init__(self):
+        super().__init__()
+        self.setWindowFlag(Qt.WindowType.FramelessWindowHint)
 
 app = QApplication([])
 
