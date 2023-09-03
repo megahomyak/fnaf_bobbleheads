@@ -10,18 +10,12 @@ def load_image(path):
     return label
 
 class Fnoof(QMainWindow):
-
-    def __init__(self):
-        super().__init__()
-
-        self.head_anims = []
-
-        for 
-        anim = QPropertyAnimation(self.child, b"pos")
-        anim.setEndValue(QPoint(400, 400))
-        anim.setDuration(1500)
-        anim.start()
+    pass
 
 app = QApplication([])
 
-window
+window = Fnoof()
+
+window.show()
+
+app.exec()
