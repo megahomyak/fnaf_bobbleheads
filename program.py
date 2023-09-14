@@ -18,13 +18,23 @@ class Fnoof(QMainWindow):
         self.bodies = self.image_label("images/bodies.png")
         self.heads = self.image_label("images/heads.png")
         self.foreground = self.image_label("images/foreground.png")
-        print(self.win_width, self.win_height)
         x, y = 0, 0
+
+        self.nod_duration_one_way = 200
+
         self.setGeometry(x, y, self.win_width, self.win_height)
+
+    def nod(self):
         self.animation = QPropertyAnimation(self.heads, b"pos")
-        self.animation.setEasingCurve(QEasingCurve.Type.InOutCubic)
-        self.animation.setEndValue(self.heads.pos() + QPoint(0, 100))
-        self.animation.setDuration(1500)
+        self.animation.setEndValue(self.heads.pos() + QPoint(0, 20))
+        self.animation.setDuration(self.nod_duration_one_way)
+        self.animation.finished.connect(self.unnod)
+        self.animation.start()
+
+    def unnod(self):
+        self.animation = QPropertyAnimation(self.heads, b"pos")
+        self.animation.setEndValue(self.heads.pos() + QPoint(0, -20))
+        self.animation.setDuration(self.nod_duration_one_way)
         self.animation.start()
 
     def image_label(self, path):
@@ -36,6 +46,7 @@ class Fnoof(QMainWindow):
         return label
 
     def mousePressEvent(self, event):
+        self.nod()
         self.old_pointer_position = event.pos()
 
     def mouseMoveEvent(self, event):
