@@ -17,9 +17,9 @@ class Fnoof(QMainWindow):
         height = int(self.bodies.height() / self.bodies.width() * width)
         x, y = 0, 0
         self.setGeometry(x, y, width, height)
-        self.animation = QPropertyAnimation(self.heads, b"y")
+        self.animation = QPropertyAnimation(self.heads, b"pos")
         self.animation.setEasingCurve(QEasingCurve.Type.InOutCubic)
-        self.animation.setEndValue(self.heads)
+        self.animation.setEndValue(self.heads.pos() + QPoint(0, -100))
         self.animation.setDuration(1500)
         self.animation.start()
 
@@ -28,12 +28,6 @@ class Fnoof(QMainWindow):
         label = QLabel(self)
         label.setPixmap(pixmap)
         return label
-
-    def paintEvent(self, _event) -> None:
-        painter = QPainter(self)
-        painter.drawPixmap(self.rect(), self.bodies)
-        painter.drawPixmap(self.rect(), self.heads)
-        painter.drawPixmap(self.rect(), self.foreground)
 
     def mousePressEvent(self, event):
         self.old_pointer_position = event.pos()
