@@ -22,9 +22,13 @@ class Fnoof(QMainWindow):
 
         self.nod_duration_one_way = 200
 
+        self.animation = QPropertyAnimation()
+
         self.setGeometry(x, y, self.win_width, self.win_height)
 
     def nod(self):
+        self.animation.stop()
+        self.heads.move(0, 0)
         self.animation = QPropertyAnimation(self.heads, b"pos")
         self.animation.setEndValue(self.heads.pos() + QPoint(0, 20))
         self.animation.setDuration(self.nod_duration_one_way)
