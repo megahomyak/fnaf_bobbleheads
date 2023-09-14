@@ -1,3 +1,4 @@
+from PyQt6 import QtCore
 from PyQt6.QtCore import QPoint, QPropertyAnimation, Qt
 from PyQt6.QtGui import QPixmap
 from PyQt6.QtWidgets import QApplication, QLabel, QMainWindow, QSizePolicy
@@ -9,6 +10,7 @@ import soundcard
 import soundfile
 
 class Fnoof(QMainWindow):
+    nod_signal = QtCore.pyqtSignal(int)
 
     def __init__(self):
         super().__init__()
@@ -34,6 +36,9 @@ class Fnoof(QMainWindow):
         x, y = 0, 0
         self.setGeometry(x, y, self.win_width, self.win_height)
 
+        self.nod_signal.connect(self.nod)
+
+    @QtCore.pyqtSlot(int)
     def nod(self, duration):
         print("nod", duration)
         print(time.time())
@@ -97,7 +102,8 @@ class Fnoof(QMainWindow):
             print(current_time, first_beat_time, seconds_per_beat)
             wait_time = diff % seconds_per_beat
             time.sleep(wait_time)
-            self.nod(int(seconds_per_beat * 1000 // 2))
+            nod_interval = int(seconds_per_beat * 1000 // 2)
+            self.nod_signal.emit(nod_interval)
 
     def mousePressEvent(self, event):
         self.old_pointer_position = event.pos()
