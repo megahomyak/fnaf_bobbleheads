@@ -1,4 +1,3 @@
-import threading
 from PyQt6 import QtCore
 from PyQt6.QtCore import QPoint, QPropertyAnimation, Qt
 from PyQt6.QtGui import QPixmap
@@ -43,14 +42,14 @@ class Fnoof(QMainWindow):
         self.animation.stop()
         self.heads.move(0, 0)
         self.animation = QPropertyAnimation(self.heads, b"pos")
-        self.animation.setEndValue(self.heads.pos() + QPoint(0, 20))
+        self.animation.setEndValue(self.heads.pos() + QPoint(0, 15))
         self.animation.setDuration(duration)
         self.animation.finished.connect(lambda: self.unnod(duration))
         self.animation.start()
 
     def unnod(self, duration):
         self.animation = QPropertyAnimation(self.heads, b"pos")
-        self.animation.setEndValue(self.heads.pos() + QPoint(0, -20))
+        self.animation.setEndValue(self.heads.pos() + QPoint(0, -15))
         self.animation.setDuration(duration)
         self.animation.start()
 
@@ -64,7 +63,7 @@ class Fnoof(QMainWindow):
 
     def update_nods(self):
         SAMPLE_RATE = 48000
-        TIME_SEC = 5
+        TIME_SEC = 10
         while True:
             recording = BytesIO()
             measure_time = time.time()
@@ -85,6 +84,7 @@ class Fnoof(QMainWindow):
             self.nodding_stopper = nodding_stopper
 
             if tempo:
+                print("BPM =", tempo)
                 interval = 60 / float(tempo) # Seconds per beat
                 first_beat_time = measure_time + float(beat_times[0])
 
@@ -93,14 +93,14 @@ class Fnoof(QMainWindow):
                 )).start()
 
     def run_nodding_thread(self, first_beat_time, interval, nodding_stopper):
+        nod_interval = int(interval * 500) # 1000 / 2
+        now = time.time()
+        diff = now - first_beat_time
+        time.sleep(interval - (diff % interval))
         while True:
             if nodding_stopper.is_set():
                 break
-            now = time.time()
-            diff = first_beat_time - now
-            time_until_next_one = interval - (diff % interval)
-            time.sleep(time_until_next_one)
-            nod_interval = int(interval / 2)
+            time.sleep(interval)
             self.nod_signal.emit(nod_interval)
 
     def mousePressEvent(self, event):
@@ -114,11 +114,5 @@ class Fnoof(QMainWindow):
 app = QApplication([])
 window = Fnoof()
 window.show()
-
-def update_nods_regularly():
-    while True:
-        Thread(target=window.update_nods).start()
-        time.sleep(10)
-
-Thread(target=update_nods_regularly).start()
+Thread(target=window.update_nods).start()
 app.exec()
