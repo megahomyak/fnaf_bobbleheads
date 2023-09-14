@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "fnaf_rave"
+name = "fnaf_bobbleheads"
 version = "0.1.0"
 description = ""
 authors = ["megahomyak <g.megahomyak@gmail.com>"]
@@ -7,6 +7,9 @@ authors = ["megahomyak <g.megahomyak@gmail.com>"]
 [tool.poetry.dependencies]
 python = "^3.8"
 PyQt6 = "^6.5.2"
+librosa = "^0.10.1"
+SoundCard = "^0.4.2"
+soundfile = "^0.12.1"
 
 [tool.poetry.dev-dependencies]
 
