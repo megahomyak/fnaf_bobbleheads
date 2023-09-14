@@ -63,7 +63,7 @@ class Fnoof(QMainWindow):
 
     def update_nods(self):
         SAMPLE_RATE = 48000
-        TIME_SEC = 10
+        TIME_SEC = 5
         while True:
             recording = BytesIO()
             measure_time = time.time()
@@ -89,7 +89,7 @@ class Fnoof(QMainWindow):
                 first_beat_time = measure_time + float(beat_times[0])
 
                 Thread(target=lambda: self.run_nodding_thread(
-                    first_beat_time, interval, nodding_stopper
+                    first_beat_time, interval / 2, nodding_stopper
                 )).start()
 
     def run_nodding_thread(self, first_beat_time, interval, nodding_stopper):
