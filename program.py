@@ -1,3 +1,4 @@
+import threading
 from PyQt6 import QtCore
 from PyQt6.QtCore import QPoint, QPropertyAnimation, Qt
 from PyQt6.QtGui import QPixmap
@@ -15,6 +16,7 @@ class Fnoof(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowFlag(Qt.WindowType.FramelessWindowHint)
+        self.setWindowFlag(Qt.WindowType.WindowStaysOnTopHint)
         # self.setWindowFlag(Qt.WindowType.X11BypassWindowManagerHint)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.old_pointer_position = None
@@ -29,8 +31,6 @@ class Fnoof(QMainWindow):
 
         self.nodding_stopper = Event()
 
-        self.RECORDING_TIME = 5 # In seconds
-
         self.animation = QPropertyAnimation()
 
         x, y = 0, 0
@@ -40,8 +40,7 @@ class Fnoof(QMainWindow):
 
     @QtCore.pyqtSlot(int)
     def nod(self, duration):
-        print("nod", duration)
-        print(time.time())
+        self.animation.stop()
         self.heads.move(0, 0)
         self.animation = QPropertyAnimation(self.heads, b"pos")
         self.animation.setEndValue(self.heads.pos() + QPoint(0, 20))
@@ -50,7 +49,6 @@ class Fnoof(QMainWindow):
         self.animation.start()
 
     def unnod(self, duration):
-        print("unnod", duration)
         self.animation = QPropertyAnimation(self.heads, b"pos")
         self.animation.setEndValue(self.heads.pos() + QPoint(0, -20))
         self.animation.setDuration(duration)
@@ -66,43 +64,43 @@ class Fnoof(QMainWindow):
 
     def update_nods(self):
         SAMPLE_RATE = 48000
-        recording = BytesIO()
-        measure_time = time.time()
-        with soundcard.get_microphone(
-                id=str(soundcard.default_speaker().name),
-                include_loopback=True
-        ).recorder(samplerate=SAMPLE_RATE) as mic:
-            data = mic.record(numframes=SAMPLE_RATE * self.RECORDING_TIME)
-            soundfile.write(file=recording, data=data[:, 0], samplerate=SAMPLE_RATE, format="wav")
-        recording.seek(0)
+        TIME_SEC = 5
+        while True:
+            recording = BytesIO()
+            measure_time = time.time()
+            with soundcard.get_microphone(
+                    id=str(soundcard.default_speaker().name),
+                    include_loopback=True
+            ).recorder(samplerate=SAMPLE_RATE) as mic:
+                data = mic.record(numframes=SAMPLE_RATE * TIME_SEC)
+                soundfile.write(file=recording, data=data[:, 0], samplerate=SAMPLE_RATE, format="wav")
+            recording.seek(0)
 
-        waveform, sample_rate = librosa.load(recording)
-        tempo, beat_frames = librosa.beat.beat_track(y=waveform, sr=sample_rate)
-        beat_times = librosa.frames_to_time(frames=beat_frames, sr=sample_rate)
+            waveform, sample_rate = librosa.load(recording)
+            tempo, beat_frames = librosa.beat.beat_track(y=waveform, sr=sample_rate)
+            beat_times = librosa.frames_to_time(frames=beat_frames, sr=sample_rate)
 
-        self.nodding_stopper.set()
-        nodding_stopper = Event()
-        self.nodding_stopper = nodding_stopper
+            self.nodding_stopper.set()
+            nodding_stopper = Event()
+            self.nodding_stopper = nodding_stopper
 
-        if tempo:
-            seconds_per_beat = 60 / tempo
+            if tempo:
+                interval = 60 / float(tempo) # Seconds per beat
+                first_beat_time = measure_time + float(beat_times[0])
 
-            first_beat_time = measure_time + beat_times[0]
+                Thread(target=lambda: self.run_nodding_thread(
+                    first_beat_time, interval, nodding_stopper
+                )).start()
 
-            Thread(target=lambda: self.run_nodding_thread(
-                first_beat_time, seconds_per_beat, nodding_stopper
-            )).start()
-
-    def run_nodding_thread(self, first_beat_time, seconds_per_beat, nodding_stopper):
+    def run_nodding_thread(self, first_beat_time, interval, nodding_stopper):
         while True:
             if nodding_stopper.is_set():
                 break
-            current_time = time.time()
-            diff = current_time - first_beat_time
-            print(current_time, first_beat_time, seconds_per_beat)
-            wait_time = diff % seconds_per_beat
-            time.sleep(wait_time)
-            nod_interval = int(seconds_per_beat * 1000 // 2)
+            now = time.time()
+            diff = first_beat_time - now
+            time_until_next_one = interval - (diff % interval)
+            time.sleep(time_until_next_one)
+            nod_interval = int(interval / 2)
             self.nod_signal.emit(nod_interval)
 
     def mousePressEvent(self, event):
@@ -118,10 +116,9 @@ window = Fnoof()
 window.show()
 
 def update_nods_regularly():
-    ESTIMATED_PROCESSING_DELAY = 1 # In seconds
     while True:
         Thread(target=window.update_nods).start()
-        time.sleep(window.RECORDING_TIME - ESTIMATED_PROCESSING_DELAY)
+        time.sleep(10)
 
 Thread(target=update_nods_regularly).start()
 app.exec()
